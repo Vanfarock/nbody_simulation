@@ -8,16 +8,16 @@ const GRAVITY_CONSTANT: f64 = 6.67430e-11;
 
 #[derive(Serialize)]
 pub struct Body {
-    position: Vector3<f64>,
-    velocity: Vector3<f64>,
+    pos: Vector3<f64>,
+    vel: Vector3<f64>,
     mass: f64,
 }
 
 impl Body {
     fn new(position: Vector3<f64>, velocity: Vector3<f64>, mass: f64) -> Self {
         Body {
-            position,
-            velocity,
+            pos: position,
+            vel: velocity,
             mass,
         }
     }
@@ -26,15 +26,15 @@ impl Body {
 impl fmt::Display for Body {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Body")
-            .field("position", &self.position)
-            .field("velocity", &self.velocity)
+            .field("position", &self.pos)
+            .field("velocity", &self.vel)
             .field("mass", &self.mass)
             .finish()
     }
 }
 
 fn calculate_gravity_force(body1: &Body, body2: &Body, softening_parameter: f64) -> Vector3<f64> {
-    let delta_position = body2.position - body1.position;
+    let delta_position = body2.pos - body1.pos;
     let distance_squared = delta_position.norm_squared() + softening_parameter.powi(2);
     let distance_cubed = distance_squared.sqrt() * distance_squared;
 
@@ -43,8 +43,8 @@ fn calculate_gravity_force(body1: &Body, body2: &Body, softening_parameter: f64)
 }
 
 fn update_body_velocity_position(body: &mut Body, acceleration: Vector3<f64>, time_step: f64) {
-    body.velocity += acceleration * time_step;
-    body.position += body.velocity * time_step;
+    body.vel += acceleration * time_step;
+    body.pos += body.vel * time_step;
 }
 
 fn file_exists(filename: &str) -> bool {
@@ -54,10 +54,12 @@ fn file_exists(filename: &str) -> bool {
     return false;
 }
 
-fn open_or_create_file(filename: &str) -> Result<File, Box<dyn Error>> {
-    if !file_exists(filename) {
-        File::create(filename)?;
+fn open_file(filename: &str) -> Result<File, Box<dyn Error>> {
+    if file_exists(filename) {
+        fs::remove_file(filename)?;
     }
+
+    File::create(filename)?;
     let file = OpenOptions::new().write(true).append(true).open(filename)?;
 
     return Ok(file);
@@ -68,8 +70,6 @@ fn save_to_json(mut file: &File, bodies: &Vec<Body>) -> Result<(), Box<dyn Error
     let json_data = format!("{}\n", bodies_as_json);
 
     let _ = file.write_all(json_data.as_bytes());
-
-    // serde_json::to_writer(&file, &bodies)?;
 
     Ok(())
 }
@@ -99,7 +99,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let num_steps = 10;
 
     let filename = "test.json";
-    let file = open_or_create_file(filename)?;
+    let file = open_file(filename)?;
 
     for _ in 0..num_steps {
         // Calculate gravitational forces and update velocities and positions
