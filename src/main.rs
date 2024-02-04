@@ -11,6 +11,9 @@ pub struct Body {
     pos: Vector3<f64>,
     vel: Vector3<f64>,
     mass: f64,
+
+    #[serde(skip_serializing)]
+    force: Vector3<f64>,
 }
 
 impl Body {
@@ -19,6 +22,7 @@ impl Body {
             pos: position,
             vel: velocity,
             mass,
+            force: Vector3::zeros(),
         }
     }
 }
@@ -75,51 +79,40 @@ fn save_to_json(mut file: &File, bodies: &Vec<Body>) -> Result<(), Box<dyn Error
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    // Example with three bodies
     let softening_parameter = 1e-5;
     let mut bodies = vec![
         Body::new(
+            Vector3::new(190.0, 200.0, 0.0),
             Vector3::new(0.0, 0.0, 0.0),
-            Vector3::new(0.0, 0.0, 0.0),
-            1.0,
+            1_000.0,
         ),
         Body::new(
-            Vector3::new(1.0, 0.0, 0.0),
-            Vector3::new(0.0, 1.0, 0.0),
-            1.0,
-        ),
-        Body::new(
-            Vector3::new(0.0, 1.0, 0.0),
-            Vector3::new(1.0, 0.0, 0.0),
-            1.0,
+            Vector3::new(210.0, 200.0, 0.0),
+            Vector3::new(0.0, 0.0, 0.0),
+            1_000.0,
         ),
     ];
 
-    let time_step = 0.01;
-    let num_steps = 10;
+    let time_step = 1_000.;
+    let num_steps = 10_000;
 
     let filename = "test.json";
     let file = open_file(filename)?;
 
+    let _ = save_to_json(&file, &bodies);
+
     for _ in 0..num_steps {
-        // Calculate gravitational forces and update velocities and positions
         for i in 0..bodies.len() {
             for j in i + 1..bodies.len() {
                 let force = calculate_gravity_force(&bodies[i], &bodies[j], softening_parameter);
-
-                let acceleration_i = force.map(|x| x / bodies[i].mass);
-                let acceleration_j = force.map(|x| x / bodies[j].mass);
-
-                // Update velocities and positions for both bodies
-                update_body_velocity_position(&mut bodies[i], acceleration_i, time_step);
-                update_body_velocity_position(&mut bodies[j], -acceleration_j, time_step);
+                bodies[i].force += force;
+                bodies[j].force -= force;
             }
+            let acceleration_i = bodies[i].force * (1. / bodies[i].mass);
+            update_body_velocity_position(&mut bodies[i], acceleration_i, time_step);
+            bodies[i].force = Vector3::zeros();
         }
         let _ = save_to_json(&file, &bodies);
-    }
-
-    for body in bodies {
-        println!("{body}");
     }
 
     Ok(())
