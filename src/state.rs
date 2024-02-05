@@ -28,7 +28,7 @@ impl State {
         if let Ok(metadata) = fs::metadata(filename) {
             return metadata.is_file();
         }
-        return false;
+        false
     }
 
     pub fn save(&mut self, bodies: &Vec<Body>) -> Result<(), serde_json::Error> {

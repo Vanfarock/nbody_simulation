@@ -26,7 +26,7 @@ fn generate_bodies() -> Vec<Body> {
         Body::new(
             Vector3::new(210.0, 200.0, 0.0),
             Vector3::new(0.0, 0.0, 0.0),
-            2_000.0,
+            1_000.0,
         ),
     ];
     bodies
