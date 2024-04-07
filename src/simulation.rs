@@ -30,32 +30,42 @@ impl Simulation {
         }
     }
 
-    pub fn run(mut self) -> Result<(), Box<dyn Error>> {
+    pub fn run(mut self, save_forces: bool) -> Result<(), Box<dyn Error>> {
         let physics = Physics {
             gravity_constant: self.gravity_constant,
             softening_parameter: self.softening_parameter,
         };
 
         let mut state = State::new(self.simulation_file)?;
-        state.save(&self.bodies)?;
+        state.save_bodies(&self.bodies)?;
 
         for _ in 0..self.total_steps {
-            self.run_step(physics, &mut state)?;
+            self.run_step(physics, &mut state, save_forces)?;
         }
 
         Ok(())
     }
 
-    fn run_step(&mut self, physics: Physics, state: &mut State) -> Result<(), Box<dyn Error>> {
+    fn run_step(
+        &mut self,
+        physics: Physics,
+        state: &mut State,
+        save_forces: bool,
+    ) -> Result<(), Box<dyn Error>> {
+        let mut forces = vec![];
         for i in 0..self.bodies.len() {
             for j in i + 1..self.bodies.len() {
                 let gravity_force = physics.get_gravity_force(&self.bodies[i], &self.bodies[j]);
                 self.bodies[i].apply_force(gravity_force);
                 self.bodies[j].apply_force(-gravity_force)
             }
+            forces.push(self.bodies[i].force);
             self.bodies[i].update_state(self.time_step);
         }
-        state.save(&self.bodies)?;
+        if save_forces {
+            state.save_forces(&forces)?;
+        }
+        state.save_bodies(&self.bodies)?;
 
         Ok(())
     }
