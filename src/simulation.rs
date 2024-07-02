@@ -57,7 +57,7 @@ impl Simulation {
             for j in i + 1..self.bodies.len() {
                 let gravity_force = physics.get_gravity_force(&self.bodies[i], &self.bodies[j]);
                 self.bodies[i].apply_force(gravity_force);
-                self.bodies[j].apply_force(-gravity_force)
+                self.bodies[j].apply_force(-gravity_force);
             }
             forces.push(self.bodies[i].force);
             self.bodies[i].update_state(self.time_step);

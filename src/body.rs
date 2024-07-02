@@ -8,6 +8,8 @@ pub struct Body {
     pub pos: Vector3<f64>,
     pub vel: Vector3<f64>,
     pub mass: f64,
+
+    #[serde(skip_serializing)]
     pub force: Vector3<f64>,
 }
 
